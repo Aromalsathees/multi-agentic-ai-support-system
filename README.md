@@ -6,7 +6,7 @@ This project simulates AI employees collaborating together to handle customer su
 
 Introducing ARCHA
 
-ARCHA (Multi-Agent Enhanced Engagement & Response Assistant) is the primary AI employee responsible for customer interactions, issue resolution, and intelligent support workflows.
+ARCHA (Autonomous Reasoning and Customer Help Assistant) is the primary AI employee responsible for customer interactions, issue resolution, and intelligent support workflows.
 
 Features
 
@@ -24,7 +24,7 @@ Features
 
 AI Agents
 
-MEERA – Customer Support Agent
+ARCHA – Customer Support Agent
 
 - Handles customer queries
 - Verifies orders and delivery status
@@ -88,6 +88,7 @@ Backend
 
 - Python
 - Django
+- Langchain 
 
 AI
 
@@ -113,6 +114,7 @@ Through this project, I gained hands-on experience in:
 
 - Agentic AI Development
 - Multi-Agent Systems
+- Langchain 
 - AI Workflow Orchestration
 - RAG Implementation
 - Vector Databases
@@ -133,4 +135,5 @@ Author
 Aromal Satheesh
 
 Python Developer | Django Developer | Agentic AI Enthusiast
+
 
