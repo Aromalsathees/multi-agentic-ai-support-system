@@ -4,9 +4,9 @@ AI Employees for Customer Support | Multi-Agent AI System
 
 This project simulates AI employees collaborating together to handle customer support operations, assess fraud risks, retrieve company knowledge, and make intelligent business decisions with real-time monitoring.
 
-Introducing MEERA
+Introducing ARCHA
 
-MEERA (Multi-Agent Enhanced Engagement & Response Assistant) is the primary AI employee responsible for customer interactions, issue resolution, and intelligent support workflows.
+ARCHA (Multi-Agent Enhanced Engagement & Response Assistant) is the primary AI employee responsible for customer interactions, issue resolution, and intelligent support workflows.
 
 Features
 
@@ -60,7 +60,7 @@ Customer Query
 
 ↓
 
-MEERA (Customer Support Agent)
+ARCHA (Customer Support Agent)
 
 ↓
 
