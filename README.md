@@ -1,5 +1,10 @@
 AI Employees for Customer Support | Multi-Agent AI System
 
+<img width="1882" height="970" alt="Screenshot (2)" src="https://github.com/user-attachments/assets/0f4f4d06-c283-471a-bd1c-9d5f58d9280a" />
+<img width="1920" height="1080" alt="Screenshot (3)" src="https://github.com/user-attachments/assets/dceb3f6f-789e-409c-bd09-a58578ca9c1a" />
+
+
+
 🚀 An autonomous Multi-Agent AI Customer Support System built with Django, Python, Claude API, RAG, ChromaDB.
 
 This project simulates AI employees collaborating together to handle customer support operations, assess fraud risks, retrieve company knowledge, and make intelligent business decisions with real-time monitoring.
