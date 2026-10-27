@@ -1,4 +1,4 @@
-                                         🤖 AI Employees for Customer Support | Multi-Agent AI System
+                                    🤖 AI Employees for Customer Support | Multi-Agent AI System
 
 <p align="center">
   <strong>Introducing ARCHA — [ Autonomous Reasoning and Customer Help Assistant ] </strong>
