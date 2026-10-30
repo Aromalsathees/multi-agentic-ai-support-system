@@ -175,8 +175,7 @@ cython_debug/
 
 support/agents.py
 support/tools.py
-support/tracking_data.py
-orders/fixtures/demo_data.json
+
 
 
 
