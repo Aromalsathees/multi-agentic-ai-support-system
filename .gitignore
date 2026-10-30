@@ -20,12 +20,6 @@ media
 *.py[cod]
 *$py.class
 
-
-support/agents.py
-support/tools.py
-support/tracking_data.py
-orders/fixtures/demo_data.json
-
 # C extensions
 *.so
 
@@ -179,4 +173,9 @@ cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
 
+
+support/agents.py
+support/tools.py
+support/tracking_data.py
+orders/fixtures/demo_data.json
 
