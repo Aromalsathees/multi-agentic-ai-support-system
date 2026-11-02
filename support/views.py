@@ -1,58 +1,138 @@
 from django.shortcuts import render, get_object_or_404
-import json
 from django.http import JsonResponse, StreamingHttpResponse
-import time
+from django.contrib.admin.views.decorators import staff_member_required
+
+import json
 
 from .langchain_agents import run_support_agent
 from .event_queue import publish, subscribe, unsubscribe
 from .models import Conversation, Message
-
 from orders.models import Order
-from django.contrib.admin.views.decorators import staff_member_required
 
-from queue import Empty
+
+def extract_response_text(response):
+    """Convert Claude/LangChain response into plain text."""
+
+    if isinstance(response, str):
+        return response
+
+    if isinstance(response, list):
+        return "\n".join(
+            extract_response_text(item)
+            for item in response
+            if item is not None
+        )
+
+    if isinstance(response, dict):
+        if response.get("type") == "text":
+            return response.get("text", "")
+
+        if "content" in response:
+            return extract_response_text(response["content"])
+
+        if "text" in response:
+            return extract_response_text(response["text"])
+
+        return json.dumps(response, default=str)
+
+    if hasattr(response, "content"):
+        return extract_response_text(response.content)
+
+    return str(response)
 
 
 def chat(request, order_id):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        user_message = data.get("message")
 
-        if not user_message:
-            return JsonResponse({"error": "Empty message"}, status=400)
-        print(user_message)
-        order = get_object_or_404(Order, id=order_id, user=request.user)
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request"}, status=405)
 
-        conversation, created = Conversation.objects.get_or_create(user=request.user, order=order)
-        
-        Message.objects.create(conversation=conversation, role="user", content=user_message)
+    data = json.loads(request.body)
+    user_message = data.get("message")
 
-        event = {"type": "user_message", "message": user_message, "name": request.user.first_name}
-        publish(conversation.id, event)
-        print(event)
-        # send user message and conversation to LLM
-        reply = run_support_agent(user_message, conversation.id, order.id, request.user.id)
-        print(reply)
-        # store the LLM reply
-        Message.objects.create(conversation=conversation, role="assistant", content=reply)
-        
-        # time.sleep(5)
+    if not user_message:
+        return JsonResponse({"error": "Empty message"}, status=400)
+
+    order = get_object_or_404(
+        Order,
+        id=order_id,
+        user=request.user
+    )
+
+    conversation, created = Conversation.objects.get_or_create(
+        user=request.user,
+        order=order
+    )
+
+    # Save customer message
+    Message.objects.create(
+        conversation=conversation,
+        role="user",
+        content=user_message
+    )
+
+    # Publish customer message to dashboard
+    publish(conversation.id, {
+        "type": "user_message",
+        "message": user_message,
+        "name": request.user.first_name
+    })
+
+    try:
+
+        # Run multi-agent support system
+        raw_reply = run_support_agent(
+            user_message,
+            conversation.id,
+            order.id,
+            request.user.id
+        )
+
+        # Convert response into plain text
+        reply = extract_response_text(raw_reply)
+
+        # Save AI response
+        Message.objects.create(
+            conversation=conversation,
+            role="assistant",
+            content=reply
+        )
+
+        # Publish final response to dashboard
+        publish(conversation.id, {
+            "type": "final",
+            "message": reply
+        })
+
         return JsonResponse({"reply": reply})
-    
+
+    finally:
+
+        # Tell dashboard that processing is completed
+        publish(conversation.id, {
+            "type": "done"
+        })
+
 
 @staff_member_required
 def dashboard(request):
+
     conversations = Conversation.objects.all().order_by("-created_at")
-    print('conversations===>', conversations)
+
     context = {
-        'conversations': conversations,
+        "conversations": conversations,
     }
+
     return render(request, "dashboard/dashboard.html", context)
 
 
 @staff_member_required
 def conversation_detail(request, conversation_id):
-    conversation = get_object_or_404(Conversation, id=conversation_id)
+
+    conversation = get_object_or_404(
+        Conversation,
+        id=conversation_id
+    )
+
     messages = conversation.messages.order_by("created_at")
     agentlogs = conversation.agentlogs.order_by("created_at")
 
@@ -61,54 +141,49 @@ def conversation_detail(request, conversation_id):
         "messages": messages,
         "agentlogs": agentlogs
     }
-    return render(request, "dashboard/conversation_detail.html", context)
 
-
-
-def conversation_stream(request, conversation_id):
-
-    # Verify that the user is allowed to access this conversation
-    conversation = get_object_or_404(
-        Conversation,
-        id=conversation_id,
-        user=request.user,
+    return render(
+        request,
+        "dashboard/conversation_detail.html",
+        context
     )
 
+
+@staff_member_required
+def conversation_stream(request, conversation_id):
+
+    # Verify conversation exists
+    get_object_or_404(Conversation, id=conversation_id)
+
     def event_stream():
-        q = subscribe(conversation.id)
+
+        q = subscribe(conversation_id)
 
         try:
-            # Notify the client that the connection is established
-            yield 'data: {"type": "connected"}\n\n'
 
             while True:
+
                 try:
-                    # Wait for the next event
                     event = q.get(timeout=15)
 
-                except Empty:
-                    # Send heartbeat to keep the connection alive
+                    yield f"data: {json.dumps(event, default=str)}\n\n"
+
+                except __import__("queue").Empty:
+
+                    # Keep SSE connection alive
                     yield ": keep-alive\n\n"
-                    continue
-
-                # Send the event immediately to the client
-                yield f"data: {json.dumps(event)}\n\n"
-
-                # Stop streaming when the agent finishes
-                if event.get("type") == "done":
-                    break
 
         finally:
-            # Clean up the subscription when the stream closes
-            unsubscribe(conversation.id, q)
+
+            unsubscribe(conversation_id, q)
+
 
     response = StreamingHttpResponse(
         event_stream(),
-        content_type="text/event-stream",
+        content_type="text/event-stream"
     )
 
-    # Prevent caching and discourage proxy buffering
-    response["Cache-Control"] = "no-cache, no-transform"
+    response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
 
     return response
