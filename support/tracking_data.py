@@ -1,6 +1,6 @@
 DELIVERY_DATA = {
     "BD99281733": {
-        "status": "In Transit",
+        "status": "Cancelled",
         "last_location": "Bangalore Sorting Hub",
         "last_update": "2 days ago",
         "estimated_delivery": "Tomorrow",
